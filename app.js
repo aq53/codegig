@@ -10,7 +10,17 @@ const db = require('./config/database')
 db.authenticate()
     .then(res=>console.log('Database connected...'))
     .catch(err=>console.log('Error: ',err))
+
 const app = express();
+
+// Handlebars
+app.engine('handlebars',exphbs({defaultLayout:'main'}));
+app.set('view engine','handlebars')
+
+// Set static folder
+app.use(express.static(path.join(__dirname,'public')))
+
+app.get('/',(req,res)=>res.render('index',{layout:'landing'}))
 
 // Gig routes
 app.use('/gigs',require('./routes/gigs'));
