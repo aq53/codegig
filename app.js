@@ -13,6 +13,9 @@ db.authenticate()
 
 const app = express();
 
+// Body Parser
+app.use(bodyParser.urlencoded({extended:false}));
+
 // Handlebars
 app.engine('handlebars',exphbs({defaultLayout:'main'}));
 app.set('view engine','handlebars')

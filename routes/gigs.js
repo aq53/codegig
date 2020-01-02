@@ -1,44 +1,77 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const db = require('../config/database');
-const Gig = require('../models/Gig');
-
+const db = require("../config/database");
+const Gig = require("../models/Gig");
+const Sequelize = require("sequelize");
+const { Op } = Sequelize;
 // Get gig list
 
-router.get('/',(req,res) =>
-    Gig.findAll().then(gigs=>{
-            console.log(gigs);
-            res.render('gigs',{
-                gigs
-            });
-        }).catch(err=>{
-            console.log(err)
-            res.sendStatus(400)
-        })
+router.get("/", (req, res) =>
+  Gig.findAll()
+    .then(gigs => res.render("gigs", { gigs }))
+    .catch(err => {
+      console.log(err);
+      res.sendStatus(400);
+    })
 );
 
 // Displa add gig form
-router.get('/add',(req,res)=>res.render('add'));
+router.get("/add", (req, res) => res.render("add"));
 
 // Add a gig
-router.post('/add',(req,res)=>{
-    const data={
-        title:'Simple Wordpress website',
-        technologies:'wordpress,php,html,css',
-        budget:'$1000',
-        description:"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book",
-        contact_email:'user1@gmail.com',
+router.post("/add", (req, res) => {
+  let { title, technologies, budget, description, contact_email } = req.body;
+  let errors = [];
+
+  // Validation
+  if (!title) {
+    errors.push({ text: "Please enter a title" });
+  }
+  if (!technologies) {
+    errors.push({ text: "Please enter some technologies" });
+  }
+  if (!description) {
+    errors.push({ text: "Please enter a description" });
+  }
+  if (!contact_email) {
+    errors.push({ text: "Please enter a contact email" });
+  }
+  if (errors.length) {
+    res.render("add", {
+      errors,
+      title,
+      technologies,
+      budget,
+      description,
+      contact_email
+    });
+  } else {
+    if (!budget) {
+      budget = "Unknown";
+    } else {
+      budget = `$${budget}`;
     }
 
-    let {title,technologies,budget,description,contact_email} = data;
+    technologies = technologies.toLowerCase().replace(/, /g, ",");
     Gig.create({
-        title,
-        technologies,
-        budget,
-        description,
-        contact_email
+      title,
+      technologies,
+      budget,
+      description,
+      contact_email
     })
-    .then(gig=>res.redirect('/gigs'))
-    .catch(err=>console.log(err));
-})
+      .then(gig => res.redirect("/gigs"))
+      .catch(err => console.log(err));
+  }
+});
+
+// Search gig
+router.get("/search", (req, res) => {
+  let { term } = req.query;
+  term = term.toLowerCase();
+  Gig.findAll({ where: { technologies: { [Op.like]: `%${term}%` } } })
+    .then(gigs => res.render("gigs", { gigs }))
+    .catch(err => console.log(err));
+});
+
 module.exports = router;
